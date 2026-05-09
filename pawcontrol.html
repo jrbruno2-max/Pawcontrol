@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PawControl</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f0e0c; --surface: #1a1916; --card: #211f1b; --border: #2e2b25;
+    --accent: #d4a84b; --accent2: #e8c47a; --accent-dim: rgba(212,168,75,0.12);
+    --text: #f0ebe0; --text-dim: #8a8070; --text-muted: #55504a;
+    --success: #5a9e6f; --warning: #c27d3a; --danger: #a04040;
+    --radius: 12px; --radius-sm: 8px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 14px; min-height: 100vh; display: flex; flex-direction: column; }
+  header { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; border-bottom: 1px solid var(--border); background: var(--surface); position: sticky; top: 0; z-index: 100; }
+  .logo { display: flex; align-items: center; gap: 10px; font-family: 'Syne', sans-serif; font-weight: 800; font-size: 20px; color: var(--text); }
+  .logo-icon { width: 34px; height: 34px; background: var(--accent); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+  .logo span { color: var(--accent); }
+  .sync-status { font-size: 11px; color: var(--text-dim); display: flex; align-items: center; gap: 6px; }
+  .sync-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--success); flex-shrink: 0; }
+  .sync-dot.erro { background: #e07070; }
+  .sync-dot.loading { background: var(--warning); animation: pulse 1s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+  nav { display: flex; gap: 2px; padding: 8px 20px; border-bottom: 1px solid var(--border); overflow-x: auto; }
+  nav::-webkit-scrollbar { display: none; }
+  .nav-btn { padding: 7px 13px; border-radius: var(--radius-sm); border: none; background: transparent; color: var(--text-dim); font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500; cursor: pointer; white-space: nowrap; transition: all 0.15s; }
+  .nav-btn:hover { background: var(--card); color: var(--text); }
+  .nav-btn.active { background: var(--accent-dim); color: var(--accent); border: 1px solid rgba(212,168,75,0.2); }
+  main { flex: 1; padding: 20px; max-width: 1100px; width: 100%; margin: 0 auto; }
+  .view { display: none; animation: fadeIn 0.2s ease; }
+  .view.active { display: block; }
+  @keyframes fadeIn { from{opacity:0;transform:translateY(5px)} to{opacity:1;transform:translateY(0)} }
+  .page-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 20px; gap: 12px; }
+  .page-title { font-family: 'Syne', sans-serif; font-size: 22px; font-weight: 700; }
+  .page-subtitle { color: var(--text-dim); font-size: 13px; margin-top: 2px; }
+  .btn { padding: 9px 15px; border-radius: var(--radius-sm); border: none; font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.15s; display: inline-flex; align-items: center; gap: 6px; }
+  .btn-primary { background: var(--accent); color: #0f0e0c; }
+  .btn-primary:hover { background: var(--accent2); }
+  .btn-ghost { background: transparent; color: var(--text-dim); border: 1px solid var(--border); }
+  .btn-ghost:hover { background: var(--card); color: var(--text); }
+  .btn-danger { background: rgba(160,64,64,0.15); color: #e07070; border: 1px solid rgba(160,64,64,0.3); }
+  .btn-sm { padding: 5px 10px; font-size: 12px; }
+  .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 20px; }
+  .stat-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; position: relative; overflow: hidden; }
+  .stat-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: var(--accent); opacity: 0.5; }
+  .stat-label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.7px; margin-bottom: 8px; }
+  .stat-value { font-family: 'Syne', sans-serif; font-size: 26px; font-weight: 700; }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+  .card-header { padding: 14px 18px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+  .card-title { font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 700; }
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; }
+  th { padding: 9px 15px; text-align: left; font-size: 11px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.6px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+  td { padding: 11px 15px; border-bottom: 1px solid rgba(46,43,37,0.5); vertical-align: middle; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: rgba(212,168,75,0.03); }
+  .badge { display: inline-flex; align-items: center; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: 500; }
+  .badge-green { background: rgba(90,158,111,0.15); color: #7ecf96; border: 1px solid rgba(90,158,111,0.2); }
+  .badge-yellow { background: rgba(212,168,75,0.15); color: var(--accent2); border: 1px solid rgba(212,168,75,0.2); }
+  .badge-red { background: rgba(160,64,64,0.15); color: #e07070; border: 1px solid rgba(160,64,64,0.2); }
+  .badge-blue { background: rgba(74,127,160,0.15); color: #7ab4d4; border: 1px solid rgba(74,127,160,0.2); }
+  .badge-gray { background: rgba(138,128,112,0.1); color: var(--text-dim); border: 1px solid var(--border); }
+  .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 13px; }
+  .form-group { display: flex; flex-direction: column; gap: 5px; }
+  .form-group.full { grid-column: 1 / -1; }
+  label { font-size: 12px; font-weight: 500; color: var(--text-dim); }
+  input, select, textarea { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 9px 12px; color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 13px; outline: none; transition: border 0.15s; width: 100%; }
+  input:focus, select:focus, textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-dim); }
+  select option { background: var(--surface); }
+  textarea { resize: vertical; min-height: 80px; }
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.75); z-index: 1000; align-items: center; justify-content: center; padding: 20px; backdrop-filter: blur(4px); }
+  .modal-overlay.open { display: flex; }
+  .modal { background: var(--card); border: 1px solid var(--border); border-radius: 16px; width: 100%; max-width: 540px; max-height: 90vh; overflow-y: auto; animation: slideUp 0.2s ease; }
+  @keyframes slideUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
+  .modal-header { padding: 18px 22px 14px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+  .modal-title { font-family: 'Syne', sans-serif; font-size: 16px; font-weight: 700; }
+  .modal-close { background: none; border: none; color: var(--text-dim); cursor: pointer; font-size: 20px; line-height: 1; }
+  .modal-body { padding: 18px 22px; }
+  .modal-footer { padding: 14px 22px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 10px; }
+  .empty { text-align: center; padding: 50px 20px; color: var(--text-muted); }
+  .empty-icon { font-size: 40px; margin-bottom: 10px; opacity: 0.4; }
+  .avatar { width: 30px; height: 30px; border-radius: 50%; background: var(--accent-dim); border: 1px solid rgba(212,168,75,0.3); display: inline-flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; color: var(--accent); flex-shrink: 0; }
+  .dog-av { width: 26px; height: 26px; border-radius: 6px; background: rgba(90,158,111,0.15); display: inline-flex; align-items: center; justify-content: center; font-size: 13px; }
+  .progress-bar { height: 5px; background: var(--border); border-radius: 3px; overflow: hidden; }
+  .progress-fill { height: 100%; background: var(--accent); border-radius: 3px; }
+  #toast { position: fixed; bottom: 20px; right: 20px; z-index: 9000; display: flex; flex-direction: column; gap: 8px; }
+  .toast-item { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 11px 15px; font-size: 13px; display: flex; align-items: center; gap: 8px; animation: slideLeft 0.2s ease; min-width: 200px; max-width: 300px; box-shadow: 0 8px 24px rgba(0,0,0,0.4); }
+  @keyframes slideLeft { from{opacity:0;transform:translateX(20px)} to{opacity:1;transform:translateX(0)} }
+  .toast-success { border-left: 3px solid var(--success); }
+  .toast-error { border-left: 3px solid var(--danger); }
+  .sb { position: relative; margin-bottom: 14px; }
+  .sb input { padding-left: 34px; }
+  .sb::before { content: '🔍'; position: absolute; left: 10px; top: 50%; transform: translateY(-50%); font-size: 12px; pointer-events: none; }
+  @media (max-width: 600px) { main { padding: 14px; } .stats-grid { grid-template-columns: repeat(2, 1fr); } .form-grid { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo"><div class="logo-icon">🐾</div>Paw<span>Control</span></div>
+  <div class="sync-status">
+    <div class="sync-dot loading" id="syncDot"></div>
+    <span id="syncLabel">Conectando...</span>
+  </div>
+</header>
+
+<nav>
+  <button class="nav-btn active" onclick="go('dashboard')" id="nav-dashboard">📊 Dashboard</button>
+  <button class="nav-btn" onclick="go('clientes')" id="nav-clientes">👥 Clientes</button>
+  <button class="nav-btn" onclick="go('caes')" id="nav-caes">🐕 Cães</button>
+  <button class="nav-btn" onclick="go('sessoes')" id="nav-sessoes">📋 Sessões</button>
+  <button class="nav-btn" onclick="go('pacotes')" id="nav-pacotes">📦 Pacotes</button>
+  <button class="nav-btn" onclick="go('financeiro')" id="nav-financeiro">💰 Financeiro</button>
+</nav>
+
+<main>
+  <div class="view active" id="view-dashboard">
+    <div class="page-header"><div><div class="page-title">Visão Geral</div><div class="page-subtitle" id="dashDate"></div></div></div>
+    <div class="stats-grid">
+      <div class="stat-card"><div class="stat-label">Clientes</div><div class="stat-value" id="s1">–</div></div>
+      <div class="stat-card"><div class="stat-label">Cães</div><div class="stat-value" id="s2">–</div></div>
+      <div class="stat-card"><div class="stat-label">Sessões</div><div class="stat-value" id="s3">–</div></div>
+      <div class="stat-card"><div class="stat-label">Receita</div><div class="stat-value" id="s4">–</div></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><div class="card-title">Últimas Sessões</div></div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Cão</th><th>Tutor</th><th>Foco</th><th>Data</th><th>Tipo</th></tr></thead>
+        <tbody id="dashSessoes"><tr><td colspan="5"><div class="empty"><div class="empty-icon">📋</div><div>Carregando...</div></div></td></tr></tbody>
+      </table></div>
+    </div>
+  </div>
+
+  <div class="view" id="view-clientes">
+    <div class="page-header"><div><div class="page-title">Clientes</div><div class="page-subtitle">Tutores cadastrados</div></div><button class="btn btn-primary" onclick="openM('mCliente')">+ Novo</button></div>
+    <div class="sb"><input id="qCliente" placeholder="Buscar..." oninput="rClientes()"></div>
+    <div class="card"><div class="table-wrap"><table>
+      <thead><tr><th>Nome</th><th>WhatsApp</th><th>E-mail</th><th>Cães</th><th></th></tr></thead>
+      <tbody id="tCliente"></tbody>
+    </table></div></div>
+  </div>
+
+  <div class="view" id="view-caes">
+    <div class="page-header"><div><div class="page-title">Cães</div><div class="page-subtitle">Pacientes cadastrados</div></div><button class="btn btn-primary" onclick="openM('mCao')">+ Novo</button></div>
+    <div class="sb"><input id="qCao" placeholder="Buscar..." oninput="rCaes()"></div>
+    <div class="card"><div class="table-wrap"><table>
+      <thead><tr><th>Nome</th><th>Raça</th><th>Tutor</th><th>Queixa</th><th>Status</th><th></th></tr></thead>
+      <tbody id="tCao"></tbody>
+    </table></div></div>
+  </div>
+
+  <div class="view" id="view-sessoes">
+    <div class="page-header"><div><div class="page-title">Sessões</div><div class="page-subtitle">Histórico</div></div><button class="btn btn-primary" onclick="openM('mSessao')">+ Nova</button></div>
+    <div class="card"><div class="table-wrap"><table>
+      <thead><tr><th>Data</th><th>Cão</th><th>Tutor</th><th>Tipo</th><th>Foco</th><th>Nota</th><th></th></tr></thead>
+      <tbody id="tSessao"></tbody>
+    </table></div></div>
+  </div>
+
+  <div class="view" id="view-pacotes">
+    <div class="page-header"><div><div class="page-title">Pacotes</div><div class="page-subtitle">Contratos e aulas</div></div><button class="btn btn-primary" onclick="openM('mPacote')">+ Novo</button></div>
+    <div class="card"><div class="table-wrap"><table>
+      <thead><tr><th>Cliente / Cão</th><th>Plano</th><th>Aulas</th><th>Progresso</th><th>Valor</th><th>Status</th><th></th></tr></thead>
+      <tbody id="tPacote"></tbody>
+    </table></div></div>
+  </div>
+
+  <div class="view" id="view-financeiro">
+    <div class="page-header"><div><div class="page-title">Financeiro</div></div><button class="btn btn-primary" onclick="openM('mPagto')">+ Lançamento</button></div>
+    <div class="stats-grid">
+      <div class="stat-card"><div class="stat-label">Recebido</div><div class="stat-value" id="fTotal">–</div></div>
+      <div class="stat-card"><div class="stat-label">Pendente</div><div class="stat-value" id="fPend">–</div></div>
+      <div class="stat-card"><div class="stat-label">Este Mês</div><div class="stat-value" id="fMes">–</div></div>
+    </div>
+    <div class="card"><div class="table-wrap"><table>
+      <thead><tr><th>Data</th><th>Descrição</th><th>Cliente</th><th>Valor</th><th>Status</th><th></th></tr></thead>
+      <tbody id="tPagto"></tbody>
+    </table></div></div>
+  </div>
+</main>
+
+<!-- MODALS -->
+<div class="modal-overlay" id="mCliente">
+  <div class="modal">
+    <div class="modal-header"><div class="modal-title">Novo Cliente</div><button class="modal-close" onclick="closeM('mCliente')">✕</button></div>
+    <div class="modal-body"><div class="form-grid">
+      <div class="form-group full"><label>Nome *</label><input id="c_nome"></div>
+      <div class="form-group"><label>WhatsApp</label><input id="c_whats" placeholder="11999999999"></div>
+      <div class="form-group"><label>E-mail</label><input id="c_email" type="email"></div>
+      <div class="form-group full"><label>Endereço</label><input id="c_end"></div>
+      <div class="form-group full"><label>Observações</label><textarea id="c_obs"></textarea></div>
+    </div></div>
+    <div class="modal-footer"><button class="btn btn-ghost" onclick="closeM('mCliente')">Cancelar</button><button class="btn btn-primary" onclick="sCliente()">Salvar</button></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="mCao">
+  <div class="modal">
+    <div class="modal-header"><div class="modal-title">Novo Cão</div><button class="modal-close" onclick="closeM('mCao')">✕</button></div>
+    <div class="modal-body"><div class="form-grid">
+      <div class="form-group"><label>Nome *</label><input id="d_nome"></div>
+      <div class="form-group"><label>Raça</label><input id="d_raca"></div>
+      <div class="form-group"><label>Idade</label><input id="d_idade" placeholder="3 anos"></div>
+      <div class="form-group"><label>Sexo</label><select id="d_sexo"><option value="">–</option><option>Macho</option><option>Fêmea</option></select></div>
+      <div class="form-group"><label>Tutor *</label><select id="d_tutor"></select></div>
+      <div class="form-group"><label>Status</label><select id="d_status"><option>Ativo</option><option>Em pausa</option><option>Concluído</option></select></div>
+      <div class="form-group full"><label>Queixa Principal</label><input id="d_queixa" placeholder="Ex: Ansiedade de separação"></div>
+      <div class="form-group full"><label>Objetivos Secundários</label><input id="d_obj"></div>
+      <div class="form-group full"><label>Observações</label><textarea id="d_obs"></textarea></div>
+    </div></div>
+    <div class="modal-footer"><button class="btn btn-ghost" onclick="closeM('mCao')">Cancelar</button><button class="btn btn-primary" onclick="sCao()">Salvar</button></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="mSessao">
+  <div class="modal">
+    <div class="modal-header"><div class="modal-title">Nova Sessão</div><button class="modal-close" onclick="closeM('mSessao')">✕</button></div>
+    <div class="modal-body"><div class="form-grid">
+      <div class="form-group"><label>Data *</label><input id="s_data" type="date"></div>
+      <div class="form-group"><label>Cão *</label><select id="s_cao"></select></div>
+      <div class="form-group"><label>Tipo</label><select id="s_tipo"><option>Consulta de Avaliação</option><option>Aula Prática</option><option>Sessão Online</option><option>Retorno</option><option>Imersão</option></select></div>
+      <div class="form-group"><label>Duração (min)</label><input id="s_dur" type="number" placeholder="60"></div>
+      <div class="form-group full"><label>Foco</label><input id="s_foco"></div>
+      <div class="form-group full"><label>Evolução / Observações</label><textarea id="s_obs"></textarea></div>
+      <div class="form-group"><label>Nota (0-10)</label><input id="s_nota" type="number" min="0" max="10"></div>
+    </div></div>
+    <div class="modal-footer"><button class="btn btn-ghost" onclick="closeM('mSessao')">Cancelar</button><button class="btn btn-primary" onclick="sSessao()">Salvar</button></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="mPacote">
+  <div class="modal">
+    <div class="modal-header"><div class="modal-title">Novo Pacote</div><button class="modal-close" onclick="closeM('mPacote')">✕</button></div>
+    <div class="modal-body"><div class="form-grid">
+      <div class="form-group"><label>Cliente *</label><select id="p_cli"></select></div>
+      <div class="form-group"><label>Cão</label><select id="p_cao"></select></div>
+      <div class="form-group full"><label>Plano</label><select id="p_plano"><option>Método Práxis — Básico (4 aulas)</option><option>Método Práxis — Intermediário (8 aulas)</option><option>Método Práxis — Avançado (12 aulas)</option><option>Personalizado</option></select></div>
+      <div class="form-group"><label>Nº de Aulas</label><input id="p_aulas" type="number"></div>
+      <div class="form-group"><label>Valor (R$)</label><input id="p_valor" type="number"></div>
+      <div class="form-group"><label>Status</label><select id="p_status"><option>Ativo</option><option>Pendente</option><option>Concluído</option><option>Cancelado</option></select></div>
+      <div class="form-group full"><label>Observações</label><textarea id="p_obs"></textarea></div>
+    </div></div>
+    <div class="modal-footer"><button class="btn btn-ghost" onclick="closeM('mPacote')">Cancelar</button><button class="btn btn-primary" onclick="sPacote()">Salvar</button></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="mPagto">
+  <div class="modal">
+    <div class="modal-header"><div class="modal-title">Lançamento</div><button class="modal-close" onclick="closeM('mPagto')">✕</button></div>
+    <div class="modal-body"><div class="form-grid">
+      <div class="form-group"><label>Data *</label><input id="f_data" type="date"></div>
+      <div class="form-group"><label>Cliente</label><select id="f_cli"></select></div>
+      <div class="form-group full"><label>Descrição *</label><input id="f_desc"></div>
+      <div class="form-group"><label>Valor (R$) *</label><input id="f_valor" type="number"></div>
+      <div class="form-group"><label>Método</label><select id="f_met"><option>PIX</option><option>Dinheiro</option><option>Cartão de Crédito</option><option>Cartão de Débito</option><option>Transferência</option></select></div>
+      <div class="form-group"><label>Status</label><select id="f_status"><option>Pago</option><option>Pendente</option><option>Parcelado</option></select></div>
+    </div></div>
+    <div class="modal-footer"><button class="btn btn-ghost" onclick="closeM('mPagto')">Cancelar</button><button class="btn btn-primary" onclick="sPagto()">Salvar</button></div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+const FB = 'https://pawcontrol-41f31-default-rtdb.firebaseio.com';
+let db = { clientes:{}, caes:{}, sessoes:{}, pacotes:{}, pagamentos:{} };
+
+// Firebase helpers
+async function fbGet(p) {
+  const r = await fetch(`${FB}/${p}.json`);
+  if (!r.ok) throw new Error(r.status);
+  return r.json();
+}
+async function fbPost(p, d) {
+  const r = await fetch(`${FB}/${p}.json`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(d) });
+  if (!r.ok) throw new Error(r.status);
+  return r.json();
+}
+async function fbDel(p) {
+  const r = await fetch(`${FB}/${p}.json`, { method:'DELETE' });
+  if (!r.ok) throw new Error(r.status);
+}
+
+function arr(o) { if (!o) return []; return Object.entries(o).map(([id,v]) => ({...v,_id:id})); }
+function $v(id) { return document.getElementById(id)?.value || ''; }
+function $c(ids) { ids.forEach(id => { const e = document.getElementById(id); if(e) e.value=''; }); }
+function dt() { return new Date().toISOString().slice(0,10); }
+function fdate(d) { if (!d) return '–'; return new Date(d+'T12:00:00').toLocaleDateString('pt-BR'); }
+function fmoney(v) { return 'R$ '+(Number(v)||0).toLocaleString('pt-BR',{minimumFractionDigits:0}); }
+
+function setSS(msg, st) {
+  document.getElementById('syncLabel').textContent = msg;
+  document.getElementById('syncDot').className = 'sync-dot' + (st==='erro'?' erro':st==='loading'?' loading':'');
+}
+
+function toast(msg, type='success') {
+  const el = document.createElement('div');
+  el.className = `toast-item toast-${type}`;
+  el.textContent = (type==='success'?'✓ ':'⚠ ') + msg;
+  document.getElementById('toast').appendChild(el);
+  setTimeout(() => el.remove(), 3500);
+}
+
+// Load
+async function loadDB() {
+  setSS('Conectando...','loading');
+  try {
+    const d = await fbGet('');
+    if (d) {
+      db.clientes   = d.clientes   || {};
+      db.caes       = d.caes       || {};
+      db.sessoes    = d.sessoes    || {};
+      db.pacotes    = d.pacotes    || {};
+      db.pagamentos = d.pagamentos || {};
+    }
+    setSS('Conectado','ok');
+    rAll();
+  } catch(e) {
+    setSS('Erro','erro');
+    toast('Erro ao conectar: '+e.message,'error');
+    rAll();
+  }
+}
+
+function go(id) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('view-'+id).classList.add('active');
+  document.getElementById('nav-'+id).classList.add('active');
+  if (id==='clientes') rClientes();
+  if (id==='caes') rCaes();
+  if (id==='sessoes') rSessoes();
+  if (id==='pacotes') rPacotes();
+  if (id==='financeiro') rFinanceiro();
+}
+
+function openM(id) {
+  document.getElementById(id).classList.add('open');
+  if (id==='mCao') pSel('d_tutor', arr(db.clientes), 'nome');
+  if (id==='mSessao') pSelCaes('s_cao');
+  if (id==='mPacote') { pSel('p_cli', arr(db.clientes),'nome'); pSelCaes('p_cao'); }
+  if (id==='mPagto') pSel('f_cli', arr(db.clientes),'nome');
+}
+function closeM(id) { document.getElementById(id).classList.remove('open'); }
+
+function pSel(sid, list, field) {
+  const s = document.getElementById(sid);
+  s.innerHTML = '<option value="">– Selecionar –</option>' + list.map(i=>`<option value="${i._id}">${i[field]}</option>`).join('');
+}
+function pSelCaes(sid) {
+  const s = document.getElementById(sid);
+  s.innerHTML = '<option value="">– Selecionar –</option>' + arr(db.caes).map(c => {
+    const t = db.clientes[c.tutorId];
+    return `<option value="${c._id}">${c.nome}${t?' ('+t.nome+')':''}</option>`;
+  }).join('');
+}
+
+function rAll() { rDash(); rClientes(); rCaes(); rSessoes(); rPacotes(); rFinanceiro(); }
+
+// Dashboard
+function rDash() {
+  document.getElementById('dashDate').textContent = new Date().toLocaleDateString('pt-BR',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+  const cl = arr(db.clientes), ca = arr(db.caes), se = arr(db.sessoes), pa = arr(db.pagamentos);
+  document.getElementById('s1').textContent = cl.length;
+  document.getElementById('s2').textContent = ca.length;
+  document.getElementById('s3').textContent = se.length;
+  document.getElementById('s4').textContent = fmoney(pa.filter(p=>p.status==='Pago').reduce((a,b)=>a+Number(b.valor||0),0));
+  const tbody = document.getElementById('dashSessoes');
+  const rec = [...se].sort((a,b)=>(b.data||'').localeCompare(a.data||'')).slice(0,8);
+  if (!rec.length) { tbody.innerHTML = `<tr><td colspan="5"><div class="empty"><div class="empty-icon">📋</div><div>Nenhuma sessão ainda</div></div></td></tr>`; return; }
+  tbody.innerHTML = rec.map(s => {
+    const c = db.caes[s.caoId], t = c?db.clientes[c.tutorId]:null;
+    return `<tr><td><div style="display:flex;align-items:center;gap:7px"><div class="dog-av">🐕</div>${c?c.nome:'–'}</div></td><td>${t?t.nome:'–'}</td><td style="color:var(--text-dim);font-size:12px">${s.foco||'–'}</td><td>${fdate(s.data)}</td><td><span class="badge badge-blue">${s.tipo||'–'}</span></td></tr>`;
+  }).join('');
+}
+
+// Clientes
+function rClientes() {
+  const q = ($v('qCliente')||'').toLowerCase();
+  const list = arr(db.clientes).filter(c => (c.nome||'').toLowerCase().includes(q)||(c.whats||'').includes(q));
+  const tb = document.getElementById('tCliente'); if(!tb)return;
+  if (!list.length) { tb.innerHTML=`<tr><td colspan="5"><div class="empty"><div class="empty-icon">👥</div><div>Nenhum cliente</div></div></td></tr>`; return; }
+  tb.innerHTML = list.map(c => {
+    const caes = arr(db.caes).filter(d=>d.tutorId===c._id);
+    return `<tr><td><div style="display:flex;align-items:center;gap:9px"><div class="avatar">${(c.nome||'?')[0]}</div>${c.nome}</div></td><td><a href="https://wa.me/55${(c.whats||'').replace(/\D/g,'')}" target="_blank" style="color:var(--accent);text-decoration:none">${c.whats||'–'}</a></td><td style="color:var(--text-dim)">${c.email||'–'}</td><td>${caes.map(d=>`<span class="badge badge-gray">🐕 ${d.nome}</span>`).join(' ')||'–'}</td><td><button class="btn btn-danger btn-sm" onclick="del('clientes','${c._id}')">🗑</button></td></tr>`;
+  }).join('');
+}
+async function sCliente() {
+  const nome = $v('c_nome').trim(); if(!nome){toast('Informe o nome','error');return;}
+  const d = {nome, whats:$v('c_whats').trim(), email:$v('c_email').trim(), endereco:$v('c_end').trim(), obs:$v('c_obs').trim(), createdAt:dt()};
+  try { const r=await fbPost('clientes',d); db.clientes[r.name]={...d,_id:r.name}; closeM('mCliente'); $c(['c_nome','c_whats','c_email','c_end','c_obs']); rClientes(); rDash(); toast('Cliente salvo!'); } catch(e){toast('Erro: '+e.message,'error');}
+}
+
+// Cães
+function rCaes() {
+  const q = ($v('qCao')||'').toLowerCase();
+  const list = arr(db.caes).filter(c=>(c.nome||'').toLowerCase().includes(q)||(c.raca||'').toLowerCase().includes(q));
+  const tb = document.getElementById('tCao'); if(!tb)return;
+  if(!list.length){tb.innerHTML=`<tr><td colspan="6"><div class="empty"><div class="empty-icon">🐕</div><div>Nenhum cão</div></div></td></tr>`;return;}
+  tb.innerHTML = list.map(c => {
+    const t=db.clientes[c.tutorId], bc=c.status==='Ativo'?'badge-green':c.status==='Concluído'?'badge-blue':'badge-gray';
+    return `<tr><td><div style="display:flex;align-items:center;gap:7px"><div class="dog-av">🐕</div><strong>${c.nome}</strong>${c.idade?` <span style="color:var(--text-muted);font-size:11px">${c.idade}</span>`:''}</div></td><td style="color:var(--text-dim)">${c.raca||'–'}</td><td>${t?t.nome:'–'}</td><td style="font-size:12px;color:var(--text-dim)">${c.queixa||'–'}</td><td><span class="badge ${bc}">${c.status||'Ativo'}</span></td><td><button class="btn btn-danger btn-sm" onclick="del('caes','${c._id}')">🗑</button></td></tr>`;
+  }).join('');
+}
+async function sCao() {
+  const nome=$v('d_nome').trim(), tutorId=$v('d_tutor');
+  if(!nome){toast('Informe o nome','error');return;} if(!tutorId){toast('Selecione o tutor','error');return;}
+  const d={nome,tutorId,raca:$v('d_raca').trim(),idade:$v('d_idade').trim(),sexo:$v('d_sexo'),status:$v('d_status'),queixa:$v('d_queixa').trim(),objetivos:$v('d_obj').trim(),obs:$v('d_obs').trim(),createdAt:dt()};
+  try{const r=await fbPost('caes',d);db.caes[r.name]={...d,_id:r.name};closeM('mCao');$c(['d_nome','d_raca','d_idade','d_queixa','d_obj','d_obs']);rCaes();rDash();toast('Cão salvo!');}catch(e){toast('Erro: '+e.message,'error');}
+}
+
+// Sessões
+function rSessoes() {
+  const tb=document.getElementById('tSessao');if(!tb)return;
+  const list=arr(db.sessoes).sort((a,b)=>(b.data||'').localeCompare(a.data||''));
+  if(!list.length){tb.innerHTML=`<tr><td colspan="7"><div class="empty"><div class="empty-icon">📋</div><div>Nenhuma sessão</div></div></td></tr>`;return;}
+  tb.innerHTML=list.map(s=>{
+    const c=db.caes[s.caoId],t=c?db.clientes[c.tutorId]:null;
+    return `<tr><td style="font-size:12px;white-space:nowrap">${fdate(s.data)}</td><td>${c?c.nome:'–'}</td><td style="color:var(--text-dim)">${t?t.nome:'–'}</td><td><span class="badge badge-blue">${s.tipo||'–'}</span></td><td style="font-size:12px;color:var(--text-dim);max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${s.foco||'–'}</td><td>${s.nota!==undefined&&s.nota!==''?`<span style="font-family:'Syne',sans-serif;font-weight:700;color:var(--accent)">${s.nota}</span><span style="color:var(--text-muted);font-size:11px">/10</span>`:'–'}</td><td><button class="btn btn-danger btn-sm" onclick="del('sessoes','${s._id}')">🗑</button></td></tr>`;
+  }).join('');
+}
+async function sSessao() {
+  const data=$v('s_data'),caoId=$v('s_cao');
+  if(!data){toast('Informe a data','error');return;}if(!caoId){toast('Selecione o cão','error');return;}
+  const d={data,caoId,tipo:$v('s_tipo'),duracao:$v('s_dur'),foco:$v('s_foco').trim(),obs:$v('s_obs').trim(),nota:$v('s_nota')};
+  try{const r=await fbPost('sessoes',d);db.sessoes[r.name]={...d,_id:r.name};closeM('mSessao');$c(['s_dur','s_foco','s_obs','s_nota']);rSessoes();rDash();toast('Sessão salva!');}catch(e){toast('Erro: '+e.message,'error');}
+}
+
+// Pacotes
+function rPacotes() {
+  const tb=document.getElementById('tPacote');if(!tb)return;
+  const list=arr(db.pacotes);
+  if(!list.length){tb.innerHTML=`<tr><td colspan="7"><div class="empty"><div class="empty-icon">📦</div><div>Nenhum pacote</div></div></td></tr>`;return;}
+  tb.innerHTML=list.map(p=>{
+    const cl=db.clientes[p.clienteId],ca=db.caes[p.caoId];
+    const sc=arr(db.sessoes).filter(s=>s.caoId===p.caoId).length;
+    const tot=Number(p.aulas)||0,fei=Math.min(sc,tot),pct=tot?Math.round((fei/tot)*100):0;
+    const bc=p.status==='Ativo'?'badge-green':p.status==='Concluído'?'badge-blue':p.status==='Cancelado'?'badge-red':'badge-yellow';
+    return `<tr><td><div style="font-weight:500">${cl?cl.nome:'–'}</div><div style="font-size:12px;color:var(--text-dim)">${ca?'🐕 '+ca.nome:'–'}</div></td><td style="font-size:12px;color:var(--text-dim)">${p.plano||'–'}</td><td style="text-align:center">${fei}/${tot}</td><td style="min-width:90px"><div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div><div style="font-size:11px;color:var(--text-muted);margin-top:2px">${pct}%</div></td><td>${p.valor?fmoney(p.valor):'–'}</td><td><span class="badge ${bc}">${p.status}</span></td><td><button class="btn btn-danger btn-sm" onclick="del('pacotes','${p._id}')">🗑</button></td></tr>`;
+  }).join('');
+}
+async function sPacote() {
+  const cliId=$v('p_cli');if(!cliId){toast('Selecione o cliente','error');return;}
+  const d={clienteId:cliId,caoId:$v('p_cao'),plano:$v('p_plano'),aulas:$v('p_aulas'),valor:$v('p_valor'),status:$v('p_status'),obs:$v('p_obs').trim(),createdAt:dt()};
+  try{const r=await fbPost('pacotes',d);db.pacotes[r.name]={...d,_id:r.name};closeM('mPacote');$c(['p_aulas','p_valor','p_obs']);rPacotes();toast('Pacote salvo!');}catch(e){toast('Erro: '+e.message,'error');}
+}
+
+// Financeiro
+function rFinanceiro() {
+  const tb=document.getElementById('tPagto');if(!tb)return;
+  const list=arr(db.pagamentos);
+  const pg=list.filter(p=>p.status==='Pago').reduce((a,b)=>a+Number(b.valor||0),0);
+  const pe=list.filter(p=>p.status!=='Pago').reduce((a,b)=>a+Number(b.valor||0),0);
+  const mes=new Date().toISOString().slice(0,7);
+  const me=list.filter(p=>p.status==='Pago'&&(p.data||'').startsWith(mes)).reduce((a,b)=>a+Number(b.valor||0),0);
+  document.getElementById('fTotal').textContent=fmoney(pg);
+  document.getElementById('fPend').textContent=fmoney(pe);
+  document.getElementById('fMes').textContent=fmoney(me);
+  if(!list.length){tb.innerHTML=`<tr><td colspan="6"><div class="empty"><div class="empty-icon">💰</div><div>Nenhum lançamento</div></div></td></tr>`;return;}
+  tb.innerHTML=[...list].sort((a,b)=>(b.data||'').localeCompare(a.data||'')).map(p=>{
+    const cl=db.clientes[p.clienteId],bc=p.status==='Pago'?'badge-green':p.status==='Pendente'?'badge-yellow':'badge-blue';
+    return `<tr><td style="font-size:12px;white-space:nowrap">${fdate(p.data)}</td><td>${p.descricao||'–'}</td><td style="color:var(--text-dim)">${cl?cl.nome:'–'}</td><td style="font-family:'Syne',sans-serif;font-weight:700;color:var(--accent)">${fmoney(p.valor)}</td><td><span class="badge ${bc}">${p.status}</span></td><td><button class="btn btn-danger btn-sm" onclick="del('pagamentos','${p._id}')">🗑</button></td></tr>`;
+  }).join('');
+}
+async function sPagto() {
+  const data=$v('f_data'),valor=$v('f_valor'),desc=$v('f_desc').trim();
+  if(!data||!valor||!desc){toast('Preencha os campos obrigatórios','error');return;}
+  const d={data,descricao:desc,clienteId:$v('f_cli'),valor,metodo:$v('f_met'),status:$v('f_status')};
+  try{const r=await fbPost('pagamentos',d);db.pagamentos[r.name]={...d,_id:r.name};closeM('mPagto');$c(['f_data','f_desc','f_valor']);rFinanceiro();rDash();toast('Lançamento salvo!');}catch(e){toast('Erro: '+e.message,'error');}
+}
+
+// Delete
+async function del(col, id) {
+  if(!confirm('Confirmar exclusão?'))return;
+  try{await fbDel(`${col}/${id}`);delete db[col][id];rAll();toast('Excluído!');}catch(e){toast('Erro ao excluir','error');}
+}
+
+// Init
+document.querySelectorAll('.modal-overlay').forEach(o=>o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('open');}));
+document.querySelectorAll('input[type=date]').forEach(el=>el.value=dt());
+document.getElementById('dashDate').textContent = new Date().toLocaleDateString('pt-BR',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+
+loadDB();
+</script>
+</body>
+</html>
